@@ -25,6 +25,10 @@ public class ClickhouseOutputConnection
     protected String buildColumnTypeName(JdbcColumn c)
     {
         switch(c.getSimpleTypeName()) {
+            case "CLOB":
+                return "String";
+            case "DOUBLE PRECISION":
+                return "Float64";
             case "DATETIME64(3)":
                 return "DateTime64";
 

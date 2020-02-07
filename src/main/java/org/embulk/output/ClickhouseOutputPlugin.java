@@ -74,6 +74,7 @@ public class ClickhouseOutputPlugin extends AbstractJdbcOutputPlugin
         public Optional<Integer> getKeepAliveTimeout();
 
         @Config("create_table_option")
+        @ConfigDefault("\"ENGINE = TinyLog\"")
         public Optional<String> getCreateTableOption();
 
     }
@@ -89,7 +90,7 @@ public class ClickhouseOutputPlugin extends AbstractJdbcOutputPlugin
     {
         return new Features()
             .setMaxTableNameLength(127)
-            .setSupportedModes(ImmutableSet.of(Mode.INSERT, Mode.INSERT_DIRECT, Mode.TRUNCATE_INSERT, Mode.REPLACE, Mode.MERGE))
+            .setSupportedModes(ImmutableSet.of(Mode.INSERT, Mode.INSERT_DIRECT, Mode.TRUNCATE_INSERT, Mode.REPLACE))
             .setIgnoreMergeKeys(false);
     }
 

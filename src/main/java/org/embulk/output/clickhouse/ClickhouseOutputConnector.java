@@ -22,6 +22,7 @@ public class ClickhouseOutputConnector
             Optional<TransactionIsolation> transactionIsolation)
     {
         super(transactionIsolation);
+
         this.url = url;
         this.properties = properties;
     }

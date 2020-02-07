@@ -1,24 +1,25 @@
 package org.embulk.output;
 
+import ru.yandex.clickhouse.settings.ClickHouseConnectionSettings;
+
 import java.util.Properties;
 import java.io.IOException;
 import java.sql.SQLException;
 
-import org.slf4j.Logger;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
-import org.embulk.spi.Exec;
 import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
 import org.embulk.output.jdbc.AbstractJdbcOutputPlugin;
 import org.embulk.output.jdbc.BatchInsert;
-import org.embulk.output.jdbc.JdbcOutputConnection;
 import org.embulk.output.jdbc.JdbcOutputConnector;
+import org.embulk.output.jdbc.setter.ColumnSetterFactory;
+import org.embulk.output.clickhouse.ClickhouseBatchInsert;
+import org.embulk.output.clickhouse.setter.ClickhouseColumnSetterFactory;
 import org.embulk.output.jdbc.MergeConfig;
-import org.embulk.output.jdbc.TableIdentifier;
-import org.embulk.output.jdbc.TransactionIsolation;
-import org.embulk.output.jdbc.Ssl;
 import org.embulk.output.clickhouse.ClickhouseOutputConnector;
+import org.joda.time.DateTimeZone;
+
 
 public class ClickhouseOutputPlugin extends AbstractJdbcOutputPlugin
 {
@@ -26,6 +27,10 @@ public class ClickhouseOutputPlugin extends AbstractJdbcOutputPlugin
     public interface ClickhousePluginTask
             extends PluginTask
     {
+        @Config("driver_path")
+        @ConfigDefault("null")
+        public Optional<String> getDriverPath();
+
         @Config("host")
         public String getHost();
 
@@ -34,18 +39,43 @@ public class ClickhouseOutputPlugin extends AbstractJdbcOutputPlugin
         public int getPort();
 
         @Config("user")
-        public String getUser();
+        @ConfigDefault("null")
+        public Optional<String> getUser();
 
         @Config("password")
-        @ConfigDefault("\"\"")
-        public String getPassword();
+        @ConfigDefault("null")
+        public Optional<String> getPassword();
 
         @Config("database")
         public String getDatabase();
 
-        @Config("schema")
-        @ConfigDefault("\"public\"")
-        public String getSchema();
+        @Config("buffer_size")
+        @ConfigDefault("65536")
+        public Optional<Integer> getBufferSize();
+
+        @Config("apache_buffer_size")
+        @ConfigDefault("65536")
+        public Optional<Integer> getApacheBufferSize();
+
+        @Config("connect_timeout")
+        @ConfigDefault("30000")
+        public int getConnectTimeout();
+
+        @Config("socket_timeout")
+        @ConfigDefault("10000")
+        public int getSocketTimeout();
+
+        @Config("data_transfer_timeout")
+        @ConfigDefault("10000")
+        public Optional<Integer> getDataTransferTimeout();
+
+        @Config("keep_alive_timeout")
+        @ConfigDefault("30000")
+        public Optional<Integer> getKeepAliveTimeout();
+
+        @Config("create_table_option")
+        public Optional<String> getCreateTableOption();
+
     }
 
     @Override
@@ -68,28 +98,53 @@ public class ClickhouseOutputPlugin extends AbstractJdbcOutputPlugin
     {
         ClickhousePluginTask t = (ClickhousePluginTask) task;
 
+        loadDriver("ru.yandex.clickhouse.ClickHouseDriver", t.getDriverPath());
+
         String url = String.format("jdbc:clickhouse://%s:%d/%s",
                 t.getHost(), t.getPort(), t.getDatabase());
 
         Properties props = new Properties();
 
-        props.setProperty("connectionTimeout", "300000"); // milliseconds
-        props.setProperty("socketTimeout", "1800000"); // smillieconds
+        if (t.getUser().isPresent()) {
+            props.setProperty("user", t.getUser().get());
+        }
+        if (t.getPassword().isPresent()) {
+            props.setProperty("password", t.getPassword().get());
+        }
+
+        // ClickHouse Connection Options
+        if (t.getApacheBufferSize().isPresent()) {
+            props.setProperty(ClickHouseConnectionSettings.APACHE_BUFFER_SIZE.getKey(), String.valueOf(t.getApacheBufferSize().get()));
+        }
+        if (t.getBufferSize().isPresent()) {
+            props.setProperty(ClickHouseConnectionSettings.BUFFER_SIZE.getKey(), String.valueOf(t.getBufferSize().get()));
+        }
+        if (t.getDataTransferTimeout().isPresent()) {
+            props.setProperty(ClickHouseConnectionSettings.DATA_TRANSFER_TIMEOUT.getKey(), String.valueOf(t.getDataTransferTimeout().get()));
+        }
+        if (t.getKeepAliveTimeout().isPresent()) {
+            props.setProperty(ClickHouseConnectionSettings.KEEP_ALIVE_TIMEOUT.getKey(), String.valueOf(t.getKeepAliveTimeout().get()));
+        }
+
+        props.setProperty(ClickHouseConnectionSettings.SOCKET_TIMEOUT.getKey(), String.valueOf(t.getSocketTimeout()));
+        props.setProperty(ClickHouseConnectionSettings.CONNECTION_TIMEOUT.getKey(), String.valueOf(t.getConnectTimeout()));
 
         props.putAll(t.getOptions());
 
-        props.setProperty("user", t.getUser());
-        props.setProperty("password", t.getPassword());
         logConnectionProperties(url, props);
 
         return new ClickhouseOutputConnector(url, props, t.getTransactionIsolation());
     }
 
     @Override
-    protected BatchInsert newBatchInsert(PluginTask task, Optional<MergeConfig> mergeConfig)
-            throws IOException, SQLException
+    protected BatchInsert newBatchInsert(PluginTask task, Optional<MergeConfig> mergeConfig) throws IOException, SQLException
     {
-        // TODO Auto-generated method stub
-        return null;
+        return new ClickhouseBatchInsert(getConnector(task, true), mergeConfig);
+    }
+
+    @Override
+    protected ColumnSetterFactory newColumnSetterFactory(BatchInsert batch, DateTimeZone defaultTimeZone)
+    {
+        return new ClickhouseColumnSetterFactory(batch, defaultTimeZone);
     }
 }

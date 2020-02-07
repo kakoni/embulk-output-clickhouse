@@ -1,9 +1,8 @@
 plugins {
-    id "com.jfrog.bintray" version "1.1"
-    id "com.github.jruby-gradle.base" version "0.1.5"
-    id "java"
-    id "checkstyle"
-    id "jacoco"
+    id 'com.jfrog.bintray' version '1.6'
+    id 'com.github.jruby-gradle.base' version '1.2.1'
+    id 'java'
+    id 'checkstyle'
 }
 import com.github.jrubygradle.JRubyExec
 repositories {
@@ -15,12 +14,13 @@ repositories {
 }
 configurations {
     provided
+    defaultJdbcDriver
 }
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-version = "0.1.3"
+version = "0.1.4"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -31,6 +31,7 @@ dependencies {
 
     compile "org.embulk.output.jdbc:embulk-output-jdbc:0.8.7"
     compile "ru.yandex.clickhouse:clickhouse-jdbc:0.2.4"
+    defaultJdbcDriver "ru.yandex.clickhouse:clickhouse-jdbc:0.2.4"
 
     testCompile "junit:junit:4.+"
     testCompile "org.embulk:embulk-core:0.9.15:tests"
@@ -38,12 +39,19 @@ dependencies {
 }
 
 task classpath(type: Copy, dependsOn: ["jar"]) {
-    doFirst { file("classpath").deleteDir() }
-    from (configurations.runtime - configurations.provided + files(jar.archivePath))
-    into "classpath"
+    doFirst { file('classpath').deleteDir() }
+    from (configurations.runtime - configurations.provided - configurations.defaultJdbcDriver + files(jar.archivePath))
+    into 'classpath'
 }
-clean { delete 'classpath' }
-
+task defaultJdbcDriver(type: Copy, dependsOn: ["jar"]) {
+    doFirst { file('default_jdbc_driver').deleteDir() }
+    from (configurations.defaultJdbcDriver)
+    into 'default_jdbc_driver'
+}
+clean {
+    delete 'classpath'
+    delete 'default_jdbc_driver'
+}
 checkstyle {
     configFile = file("${project.rootDir}/config/checkstyle/checkstyle.xml")
     toolVersion = '6.14.1'
@@ -61,13 +69,15 @@ task checkstyle(type: Checkstyle) {
     source = sourceSets.main.allJava + sourceSets.test.allJava
 }
 
-task gem(type: JRubyExec, dependsOn: ["build", "gemspec", "classpath"]) {
-    jrubyArgs "-rrubygems/gem_runner", "-eGem::GemRunner.new.run(ARGV)", "build"
-    script "build/gemspec"
+task gem(type: JRubyExec, dependsOn: ['build', 'gemspec', 'classpath', 'defaultJdbcDriver']) {
+    jrubyArgs '-rrubygems/gem_runner', "-eGem::GemRunner.new.run(ARGV)", 'build'
+    scriptArgs "build/gemspec"
     doLast { ant.move(file: "${project.name}-${project.version}.gem", todir: "pkg") }
 }
 
-task gemspec << { file("build/gemspec").write($/
+task gemspec << {
+    file('build').mkdirs();
+    file('build/gemspec').write($/
 Gem::Specification.new do |spec|
   spec.name          = "${project.name}"
   spec.version       = "${project.version}"
@@ -76,14 +86,10 @@ Gem::Specification.new do |spec|
   spec.description   = %[Dumps records to Clickhouse.]
   spec.email         = ["karri.niemela@beans.fi"]
   spec.licenses      = ["MIT"]
-  # TODO set this: spec.homepage      = "https://github.com/karri.niemela/embulk-output-clickhouse"
 
-  spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"]
+  spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"] + Dir["default_jdbc_driver/*.jar"]
   spec.test_files    = spec.files.grep(%r"^(test|spec)/")
   spec.require_paths = ["lib"]
-
-  spec.add_development_dependency 'bundler', ['~> 1.0']
-  spec.add_development_dependency 'rake', ['>= 10.0']
 end
 /$)
 }

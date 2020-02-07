@@ -1,6 +1,6 @@
 # Clickhouse output plugin for Embulk
 
-Alpha stage output plugin for embulk loads record to clickhouse server.
+Alpha stage Clickhouse output plugin for embulk. Loads record to clickhouse server.
 
 ## Overview
 

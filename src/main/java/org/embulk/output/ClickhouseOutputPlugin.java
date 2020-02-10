@@ -62,7 +62,7 @@ public class ClickhouseOutputPlugin extends AbstractJdbcOutputPlugin
         public int getConnectTimeout();
 
         @Config("socket_timeout")
-        @ConfigDefault("10000")
+        @ConfigDefault("30000")
         public int getSocketTimeout();
 
         @Config("data_transfer_timeout")

@@ -17,7 +17,7 @@ Alpha stage Clickhouse output plugin for embulk. Loads record to clickhouse serv
 - **buffer_size**: see ClickHouse param **buffer_size** (integer, default: 65535)
 - **apache_buffer_size**: see ClickHouse param **apache_buffer_size** (integer, default: 65535)
 - **connect_timeout**: see ClickHouse param **connection_timeout** (integer, default: 30000)
-- **socket_timeout**: see ClickHouse param **socket_timeout** (integer, default: 10000)
+- **socket_timeout**: see ClickHouse param **socket_timeout** (integer, default: 30000)
 - **data_transfer_timeout**: see ClickHouse param **data_transfer_timeout** (integer, default: 10000)
 - **keep_alive_timeout**: see ClickHouse param **keep_alive_timeout** (integer, default: 10000)
 - **column_options**: advanced: a key-value pairs where key is a column name and value is options for the column.

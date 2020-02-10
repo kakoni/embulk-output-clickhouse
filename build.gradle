@@ -68,7 +68,6 @@ task checkstyle(type: Checkstyle) {
     classpath = sourceSets.main.output + sourceSets.test.output
     source = sourceSets.main.allJava + sourceSets.test.allJava
 }
-
 task gem(type: JRubyExec, dependsOn: ['build', 'gemspec', 'classpath', 'defaultJdbcDriver']) {
     jrubyArgs '-rrubygems/gem_runner', "-eGem::GemRunner.new.run(ARGV)", 'build'
     scriptArgs "build/gemspec"
@@ -86,6 +85,7 @@ Gem::Specification.new do |spec|
   spec.description   = %[Dumps records to Clickhouse.]
   spec.email         = ["karri.niemela@beans.fi"]
   spec.licenses      = ["MIT"]
+  spec.homepage      = "https://github.com/kakoni/embulk-output-clickhouse"
 
   spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"] + Dir["default_jdbc_driver/*.jar"]
   spec.test_files    = spec.files.grep(%r"^(test|spec)/")

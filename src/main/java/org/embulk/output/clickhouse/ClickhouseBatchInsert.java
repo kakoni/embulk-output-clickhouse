@@ -29,7 +29,7 @@ public class ClickhouseBatchInsert
     private long totalRows;
     private int[] lastUpdateCounts;
 
-    public ClickhouseBatchInsert(JdbcOutputConnector connector, Optional <MergeConfig> mergeConfig) throws
+    public ClickhouseBatchInsert(JdbcOutputConnector connector, Optional<MergeConfig> mergeConfig) throws
         IOException, SQLException
     {
         this.connector = connector;
@@ -101,7 +101,7 @@ public class ClickhouseBatchInsert
     }
 
     @Override
-    public int[] getLastUpdateCounts ()
+    public int[] getLastUpdateCounts()
     {
         return lastUpdateCounts;
     }
@@ -110,49 +110,49 @@ public class ClickhouseBatchInsert
     {
     }
 
-    public void setNull( int sqlType) throws IOException, SQLException
+    public void setNull(int sqlType) throws IOException, SQLException
     {
         batch.setNull(index, sqlType);
         nextColumn(0);
     }
 
-    public void setBoolean( boolean v) throws IOException, SQLException
+    public void setBoolean(boolean v) throws IOException, SQLException
     {
         batch.setBoolean(index, v);
         nextColumn(1);
     }
 
-    public void setByte( byte v) throws IOException, SQLException
+    public void setByte(byte v) throws IOException, SQLException
     {
         batch.setByte(index, v);
         nextColumn(1);
     }
 
-    public void setShort( short v) throws IOException, SQLException
+    public void setShort(short v) throws IOException, SQLException
     {
         batch.setShort(index, v);
         nextColumn(2);
     }
 
-    public void setInt( int v) throws IOException, SQLException
+    public void setInt(int v) throws IOException, SQLException
     {
         batch.setInt(index, v);
         nextColumn(4);
     }
 
-    public void setLong( long v) throws IOException, SQLException
+    public void setLong(long v) throws IOException, SQLException
     {
         batch.setLong(index, v);
         nextColumn(8);
     }
 
-    public void setFloat( float v) throws IOException, SQLException
+    public void setFloat(float v) throws IOException, SQLException
     {
         batch.setFloat(index, v);
         nextColumn(4);
     }
 
-    public void setDouble( double v) throws IOException, SQLException
+    public void setDouble(double v) throws IOException, SQLException
     {
         batch.setDouble(index, v);
         nextColumn(8);
@@ -180,7 +180,7 @@ public class ClickhouseBatchInsert
         nextColumn(v.length() * 2 + 4);
     }
 
-    public void setBytes( byte[] v) throws IOException, SQLException
+    public void setBytes(byte[] v) throws IOException, SQLException
     {
         batch.setBytes(index, v);
         nextColumn(v.length + 4);
@@ -214,7 +214,7 @@ public class ClickhouseBatchInsert
         nextColumn(32);
     }
 
-    private void nextColumn( int weight)
+    private void nextColumn(int weight)
     {
         index++;
         batchWeight += weight + 4;  // add weight as overhead of each columns
